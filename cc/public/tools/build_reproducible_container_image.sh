@@ -80,6 +80,8 @@ bash -c "echo 'startup --output_user_root=/tmp/bazel_build_output' >> /scp/.baze
 docker exec -w /scp $container_name \
 bash -c "bazel build $build_flags --action_env=BAZEL_CXXOPTS=\"-std=c++17\" $args $container_tar_target_path"
 
+container_output_tar=$(docker exec $container_name find /tmp/bazel_build_output -name ${container_name_to_build}.tar)
+
 # Change the build output directory permissions to the user running this script
 user_id="$(id -u)"
 docker exec $container_name chown -R $user_id:$user_id /tmp/bazel_build_output
@@ -87,5 +89,7 @@ docker exec $container_name chown -R $user_id:$user_id /tmp/bazel_build_output
 echo $docker_bazel_output_dir
 
 # Copy the container image to the output
-cp $(find $docker_bazel_output_dir -name "${container_name_to_build}.tar") $output_tar
+mkdir -p $(dirname $output_tar)
+docker cp $container_name:$container_output_tar $output_tar
+#cp $(find $docker_bazel_output_dir -name "${container_name_to_build}.tar") $output_tar
 run_on_exit 0
